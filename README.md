@@ -2,7 +2,7 @@
 
 Builder and templates for **tr5k.sh**, a notebook-style personal site generated straight from an
 Obsidian vault. Deployment lives in the private `tr5k-sh-ops` repo; coordination in
-`kube-open-code-agent/tasks/tr5k-sh-stack.md`.
+[`kube-open-code-agent/tasks/tr5k-sh-stack.md`](https://github.com/mattr7m/kube-open-code-agent/blob/main/tasks/tr5k-sh-stack.md).
 
 **This repo never contains vault content.** Notes reach the site at runtime via a headless
 Obsidian Sync client in the cluster; this repo holds only code, the design, and test fixtures.
