@@ -22,7 +22,8 @@ Obsidian Sync ──► vault-sync ──► /vault (only tr5k-sh/ synced)
   download-only, and any local change is reverted, so the cluster cannot alter the vault. The
   entrypoint re-applies the sync config on every start and **refuses to run** unless
   `OB_EXCLUDED_FOLDERS` is set.
-- **builder** (`src/`): reads only `<vault>/tr5k-sh/`, renders the public and private sites as two
+- **builder** (`src/`): reads only `<vault>/<content root>/` (`contentRoot` in `site.config.json`,
+  overridable with the `CONTENT_ROOT` env var — the live vault uses `tr5k.sh`), renders the public and private sites as two
   separate passes, swaps each output atomically, and rebuilds a few seconds after any change. A
   failed build leaves the previous site serving.
 

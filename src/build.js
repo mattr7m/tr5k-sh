@@ -21,8 +21,12 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..');
 const LINT_CONFIG = { default: true, MD013: false, MD033: false, MD041: false, MD025: false };
 
-export function loadConfig(configPath = path.join(REPO, 'site.config.json')) {
-  return JSON.parse(fs.readFileSync(configPath, 'utf8'));
+// CONTENT_ROOT overrides the config's contentRoot, so the vault folder name
+// is a deployment setting (e.g. "tr5k.sh") rather than baked into the image.
+export function loadConfig(configPath = path.join(REPO, 'site.config.json'), env = process.env) {
+  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  if (env.CONTENT_ROOT) config.contentRoot = env.CONTENT_ROOT;
+  return config;
 }
 
 function renderSite(site, collected, config) {
