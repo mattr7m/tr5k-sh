@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tr5k.sh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* notebook palette */
+    --page-bg: #f5edd6;
+    --page-bg-dark: #ebe0c4;
+    --page-edge: #d9cead;
+    --ink: #3b3024;
+    --ink-light: #6b5e4e;
+    --ink-faint: #9a8d7a;
+    --accent: #8b4513;
+    --accent-hover: #a0522d;
+    --terminal-bg: #2e2820;
+    --terminal-text: #c8b88a;
+    --terminal-green: #8fae6e;
+    --terminal-caret: #c8b88a;
+    --link: #6e4a2a;
+    --link-hover: #a0522d;
+    --shadow-soft: rgba(59, 48, 36, 0.08);
+    --shadow-med: rgba(59, 48, 36, 0.14);
+    --shadow-strong: rgba(59, 48, 36, 0.22);
+    --radius: 3px;
+    --content-width: 680px;
+    --sidebar-width: 180px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    font-family: 'Source Serif 4', Georgia, serif;
+    color: var(--ink);
+    background:
+      /* paper grain texture via repeating svg noise */
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
+      linear-gradient(180deg, var(--page-bg) 0%, var(--page-bg-dark) 100%);
+    min-height: 100vh;
+    line-height: 1.7;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    width: 100%;
+    background: var(--terminal-bg);
+    border-bottom: 2px solid #1e1a14;
+    box-shadow:
+      0 2px 6px var(--shadow-strong),
+      inset 0 -1px 0 rgba(200,184,138,0.06);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-inner {
+    max-width: calc(var(--content-width) + var(--sidebar-width) + 48px);
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 48px;
+  }
+
+  /* terminal breadcrumb (left) */
+  .terminal-nav {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--terminal-text);
+    display: flex;
+    align-items: center;
+    gap: 0;
+    user-select: none;
+  }
+
+  .terminal-nav .prompt {
+    color: var(--terminal-green);
+    margin-right: 6px;
+    font-weight: 500;
+  }
+
+  .terminal-nav .path-segment {
+    color: var(--terminal-text);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+
+  .terminal-nav .path-segment:hover {
+    color: #e8dcc0;
+  }
+
+  .terminal-nav .separator {
+    color: var(--ink-faint);
+    margin: 0 1px;
+  }
+
+  .terminal-nav .caret {
+    display: inline-block;
+    width: 7px;
+    height: 15px;
+    background: var(--terminal-caret);
+    margin-left: 4px;
+    animation: blink 1.1s step-end infinite;
+    vertical-align: middle;
+    border-radius: 1px;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* section nav (right) */
+  .section-nav {
+    display: flex;
+    gap: 0;
+    align-items: center;
+  }
+
+  .section-nav a {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    color: var(--terminal-text);
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: var(--radius);
+    transition: background 0.15s, color 0.15s;
+    position: relative;
+  }
+
+  .section-nav a:hover {
+    background: rgba(200,184,138,0.1);
+    color: #e8dcc0;
+  }
+
+  .section-nav a.active {
+    color: #e8dcc0;
+    font-weight: 500;
+  }
+
+  .section-nav a.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 12px;
+    right: 12px;
+    height: 1.5px;
+    background: var(--terminal-green);
+    border-radius: 1px;
+  }
+
+  /* ── SITE TITLE ── */
+  .site-header {
+    max-width: calc(var(--content-width) + var(--sidebar-width) + 48px);
+    margin: 0 auto;
+    padding: 32px 24px 0;
+  }
+
+  .site-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: -0.01em;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .site-title .dot {
+    color: var(--ink-faint);
+    font-weight: 300;
+  }
+
+  .site-title .tld {
+    font-weight: 300;
+    color: var(--ink-light);
+    font-size: 1.1rem;
+  }
+
+  .site-subtitle {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    margin-top: 4px;
+    font-weight: 300;
+    letter-spacing: 0.03em;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .main-layout {
+    max-width: calc(var(--content-width) + var(--sidebar-width) + 48px);
+    margin: 0 auto;
+    padding: 28px 24px 80px;
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+  }
+
+  /* ── SIDEBAR / TOC ── */
+  .sidebar {
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+    position: sticky;
+    top: 80px;
+  }
+
+  .toc {
+    background: var(--page-bg-dark);
+    border: 1px solid var(--page-edge);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow:
+      inset 0 1px 3px var(--shadow-soft),
+      0 1px 2px var(--shadow-soft);
+  }
+
+  .toc-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--page-edge);
+  }
+
+  .toc ul {
+    list-style: none;
+  }
+
+  .toc li {
+    margin-bottom: 2px;
+  }
+
+  .toc a {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink-light);
+    text-decoration: none;
+    display: block;
+    padding: 4px 8px;
+    border-radius: 2px;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+    line-height: 1.4;
+  }
+
+  .toc a:hover {
+    color: var(--accent);
+    background: rgba(139, 69, 19, 0.05);
+    border-left-color: var(--accent);
+  }
+
+  .toc a.active {
+    color: var(--accent);
+    font-weight: 500;
+    border-left-color: var(--accent);
+    background: rgba(139, 69, 19, 0.06);
+  }
+
+  /* ── CONTENT ── */
+  .content {
+    flex: 1;
+    min-width: 0;
+    max-width: var(--content-width);
+  }
+
+  /* notebook "page" card */
+  .page-card {
+    background: var(--page-bg);
+    border: 1px solid var(--page-edge);
+    border-radius: var(--radius);
+    padding: 36px 40px;
+    box-shadow:
+      0 1px 3px var(--shadow-soft),
+      0 4px 12px var(--shadow-soft),
+      /* page edge thickness */
+      2px 2px 0 0 rgba(217, 206, 173, 0.5),
+      3px 3px 0 0 rgba(200, 190, 160, 0.3);
+    position: relative;
+  }
+
+  /* subtle ruled-line effect */
+  .page-card::before {
+    content: '';
+    position: absolute;
+    top: 36px;
+    left: 40px;
+    right: 40px;
+    bottom: 36px;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 31px,
+      rgba(139, 69, 19, 0.05) 31px,
+      rgba(139, 69, 19, 0.05) 32px
+    );
+    pointer-events: none;
+    border-radius: 2px;
+  }
+
+  /* red margin line */
+  .page-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 72px;
+    width: 1px;
+    height: 100%;
+    background: rgba(180, 60, 60, 0.1);
+    pointer-events: none;
+  }
+
+  .content h1 {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 1.65rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 4px;
+    line-height: 1.3;
+    position: relative;
+  }
+
+  .content .post-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    margin-bottom: 24px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .content .post-meta .tag {
+    background: var(--page-bg-dark);
+    border: 1px solid var(--page-edge);
+    padding: 1px 8px;
+    border-radius: 2px;
+    font-size: 0.68rem;
+    box-shadow: inset 0 1px 2px var(--shadow-soft);
+  }
+
+  .content p {
+    margin-bottom: 18px;
+    font-size: 1rem;
+    color: var(--ink);
+    position: relative;
+  }
+
+  .content h2 {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 32px 0 12px;
+    color: var(--ink);
+    position: relative;
+  }
+
+  .content a {
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-color: rgba(110, 74, 42, 0.3);
+    text-underline-offset: 2px;
+    transition: text-decoration-color 0.15s;
+  }
+
+  .content a:hover {
+    color: var(--link-hover);
+    text-decoration-color: var(--link-hover);
+  }
+
+  /* code blocks */
+  .content pre {
+    background: var(--terminal-bg);
+    color: var(--terminal-text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    padding: 18px 20px;
+    border-radius: var(--radius);
+    margin: 20px 0;
+    overflow-x: auto;
+    box-shadow:
+      inset 0 2px 6px rgba(0,0,0,0.25),
+      0 1px 0 var(--page-edge);
+    border: 1px solid #1e1a14;
+    position: relative;
+  }
+
+  .content pre .comment { color: #6b6252; font-style: italic; }
+  .content pre .keyword { color: #c9956b; }
+  .content pre .string { color: #8fae6e; }
+  .content pre .func { color: #7eaac7; }
+
+  .content code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85em;
+    background: var(--page-bg-dark);
+    border: 1px solid var(--page-edge);
+    padding: 1px 5px;
+    border-radius: 2px;
+    box-shadow: inset 0 1px 2px var(--shadow-soft);
+  }
+
+  .content pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  /* callout / note box */
+  .callout {
+    background: var(--page-bg-dark);
+    border: 1px solid var(--page-edge);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin: 20px 0;
+    font-size: 0.92rem;
+    box-shadow:
+      inset 0 1px 3px var(--shadow-soft),
+      0 1px 2px var(--shadow-soft);
+    position: relative;
+  }
+
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  /* ── ARTICLE LIST (homepage) ── */
+  .article-list {
+    list-style: none;
+    margin: 8px 0;
+  }
+
+  .article-list li {
+    border-bottom: 1px solid var(--page-edge);
+    position: relative;
+  }
+
+  .article-list li:last-child {
+    border-bottom: none;
+  }
+
+  .article-list a {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 12px 12px;
+    text-decoration: none;
+    border-radius: 2px;
+    transition: background 0.12s;
+    gap: 16px;
+  }
+
+  .article-list a:hover {
+    background: rgba(139, 69, 19, 0.04);
+  }
+
+  .article-list .article-title {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 0.95rem;
+    color: var(--ink);
+    font-weight: 400;
+  }
+
+  .article-list .article-date {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--ink-faint);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* section label in article list */
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+    padding: 20px 12px 4px;
+    display: block;
+  }
+
+  /* ── FOOTER ── */
+  .site-footer {
+    max-width: calc(var(--content-width) + var(--sidebar-width) + 48px);
+    margin: 0 auto;
+    padding: 0 24px 40px;
+  }
+
+  .footer-inner {
+    border-top: 1px solid var(--page-edge);
+    padding-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--ink-faint);
+  }
+
+  .footer-inner a {
+    color: var(--ink-light);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+
+  .footer-inner a:hover {
+    color: var(--accent);
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 768px) {
+    .sidebar {
+      display: none;
+    }
+
+    .main-layout {
+      padding: 20px 16px 60px;
+    }
+
+    .page-card {
+      padding: 24px 20px;
+    }
+
+    .page-card::before {
+      top: 24px;
+      left: 20px;
+      right: 20px;
+      bottom: 24px;
+    }
+
+    .page-card::after {
+      left: 44px;
+    }
+
+    .topbar-inner {
+      padding: 0 16px;
+      flex-direction: column;
+      height: auto;
+      padding: 10px 16px;
+      gap: 4px;
+    }
+
+    .terminal-nav {
+      font-size: 0.75rem;
+    }
+
+    .section-nav a {
+      padding: 4px 8px;
+      font-size: 0.72rem;
+    }
+
+    .site-header {
+      padding: 24px 16px 0;
+    }
+  }
+
+  /* page load fade */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .page-card {
+    animation: fadeUp 0.4s ease-out;
+  }
+
+  .sidebar {
+    animation: fadeUp 0.4s ease-out 0.1s both;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── TOP BAR ── -->
+<nav class="topbar">
+  <div class="topbar-inner">
+    <div class="terminal-nav">
+      <span class="prompt">$</span>
+      <a href="#" class="path-segment">~</a>
+      <span class="separator">/</span>
+      <a href="#" class="path-segment">Personal</a>
+      <span class="separator">/</span>
+      <a href="#" class="path-segment">camping</a>
+      <span class="caret"></span>
+    </div>
+    <div class="section-nav">
+      <a href="#">About</a>
+      <a href="#">Infra</a>
+      <a href="#">Hacking</a>
+      <a href="#">Reading</a>
+      <a href="#" class="active">Personal</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HEADER ── -->
+<header class="site-header">
+  <div class="site-title">
+    tr5k<span class="dot">.</span><span class="tld">sh</span>
+  </div>
+  <div class="site-subtitle">notes from the workshop &mdash; matt rennebohm</div>
+</header>
+
+<!-- ── MAIN ── -->
+<main class="main-layout">
+
+  <!-- sidebar TOC -->
+  <aside class="sidebar">
+    <div class="toc">
+      <div class="toc-title">Personal</div>
+      <ul>
+        <li><a href="#" class="active">Camping</a></li>
+        <li><a href="#">Woodworking</a></li>
+        <li><a href="#">Photography</a></li>
+        <li><a href="#">Reads &amp; Reviews</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- content area -->
+  <div class="content">
+
+    <!-- EXAMPLE: Article view -->
+    <article class="page-card">
+      <h1>Backcountry Network Monitoring with LoRa</h1>
+      <div class="post-meta">
+        <span>Feb 18, 2026</span>
+        <span class="tag">camping</span>
+        <span class="tag">infra</span>
+      </div>
+
+      <p>Last fall I spent a week in the Boundary Waters with a couple of Heltec V3 boards, a small solar panel, and an unreasonable desire to know the temperature of the lake at all times. This is what I learned about running a LoRa mesh network when the nearest cell tower is 40 miles away.</p>
+
+      <h2>The Hardware</h2>
+
+      <p>The Heltec WiFi LoRa 32 (V3) hits a good balance between cost and capability. At roughly $18 per board you can afford to lose one to a curious raccoon. I flashed each with <a href="#">Meshtastic</a> firmware and packed them in waterproof cases from the dollar store.</p>
+
+      <div class="callout">
+        <div class="callout-label">Note</div>
+        <p style="margin-bottom:0">If you're considering the TTGO T-Beam as an alternative, be aware that the GPS module draws significantly more power. For stationary nodes, the Heltec is the better choice.</p>
+      </div>
+
+      <h2>Node Configuration</h2>
+
+      <p>Each node was configured with a 60-second broadcast interval. The base station node sat under a tarp near camp, powered by a 6W panel feeding a small LiFePO4 cell:</p>
+
+<pre><code><span class="comment"># meshtastic config for base node</span>
+meshtastic <span class="keyword">--set</span> lora.region US
+meshtastic <span class="keyword">--set</span> lora.modem_preset LONG_SLOW
+meshtastic <span class="keyword">--ch-set</span> name <span class="string">"bwca-mesh"</span>
+meshtastic <span class="keyword">--set</span> position.gps_enabled <span class="string">false</span>
+meshtastic <span class="keyword">--set</span> power.wait_bluetooth_secs <span class="string">30</span></code></pre>
+
+      <p>The remote nodes were placed at the portage landing and the far shore &mdash; roughly 1.2km line-of-sight across the lake. Signal strength held surprisingly well over water, averaging around -95 dBm.</p>
+
+      <h2>What Worked</h2>
+
+      <p>Honestly, most of it. The mesh stayed up for five days straight without intervention. Temperature readings from a DS18B20 probe came through reliably, and the solar panel kept the base station charged even on overcast days. The whole setup packed down into a single dry bag weighing under 2 lbs.</p>
+
+      <p>Next time I want to add a small e-ink display at the base station and experiment with longer-range links across portages. But that's a post for another day.</p>
+    </article>
+
+    <!-- EXAMPLE: below the article, recent posts list -->
+    <div style="margin-top: 32px;">
+      <span class="section-label">Recent in Personal</span>
+      <ul class="article-list">
+        <li>
+          <a href="#">
+            <span class="article-title">Hammock vs. Tent: A Quantitative Analysis of Sleep Quality</span>
+            <span class="article-date">Jan 30, 2026</span>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <span class="article-title">Building a Cedar Strip Canoe Paddle from Scratch</span>
+            <span class="article-date">Dec 12, 2025</span>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <span class="article-title">Winter Photography in the Northwoods</span>
+            <span class="article-date">Nov 04, 2025</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+</main>
+
+<!-- ── FOOTER ── -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <span>&copy; 2026 Matt Rennebohm</span>
+    <span>
+      <a href="https://github.com/mattr7m">github</a>
+      &nbsp;&middot;&nbsp;
+      <a href="#">rss</a>
+    </span>
+  </div>
+</footer>
+
+</body>
+</html>
