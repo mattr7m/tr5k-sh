@@ -1,0 +1,14 @@
+{
+  "siteTitle": "tr5k.sh",
+  "author": "Matt Rennebohm",
+  "github": "https://github.com/mattr7m",
+  "contentRoot": "tr5k-sh",
+  "homeLimit": 20,
+  "nav": [
+    { "slug": "about",    "title": "About",    "page": "about" },
+    { "slug": "infra",    "title": "Infra" },
+    { "slug": "hacking",  "title": "Hacking" },
+    { "slug": "reading",  "title": "Reading" },
+    { "slug": "personal", "title": "Personal" }
+  ]
+}
