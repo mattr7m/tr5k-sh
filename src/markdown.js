@@ -145,5 +145,14 @@ export function createRenderer(ctx) {
     return defaultImage(tokens, idx, options, env, self);
   };
 
+  // ── Tables: wrap in a focusable horizontal-scroll region ─────────────────
+  // A table wider than the content column scrolls inside its wrapper instead of
+  // overflowing the page; tabindex lets keyboard users scroll it, and the label
+  // names the region for screen readers. Alignment from `:---:` / `---:` comes
+  // through as markdown-it's per-cell `style="text-align:…"`.
+  md.renderer.rules.table_open = () =>
+    '<div class="table-wrap" role="region" aria-label="Table (scrolls horizontally when wide)" tabindex="0">\n<table>\n';
+  md.renderer.rules.table_close = () => '</table>\n</div>\n';
+
   return (markdown) => md.render(markdown);
 }
