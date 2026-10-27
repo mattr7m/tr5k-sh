@@ -9,7 +9,7 @@ import path from 'node:path';
 import matter from 'gray-matter';
 import {
   SITES, normalizePublish, toSlugList, noteDate, noteTitle, noteSlug, compareNotes, toClassList,
-}  from './contract.js';
+} from './contract.js';
 
 export class BuildError extends Error {}
 
