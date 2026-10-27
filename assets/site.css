@@ -565,3 +565,19 @@
   .content thead th:first-child { z-index: 2; }
   .content td a { white-space: nowrap; }
 
+  /* ── MONTHLY CALENDARS ── (notes with Obsidian `cssclasses: monthly-calendar`)
+     The first column holds week numbers, not row labels: shrink it to its content and
+     give it the day numbers' regular weight, muted. */
+  .content.monthly-calendar th:first-child,
+  .content.monthly-calendar td:first-child {
+    width: 1%;
+    min-width: 0;
+    max-width: none;
+    white-space: nowrap;
+    padding-left: 8px;
+    padding-right: 8px;
+    text-align: center !important;
+    font-weight: 400;
+    color: var(--ink-light);
+  }
+

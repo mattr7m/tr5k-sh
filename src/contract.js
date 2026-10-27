@@ -39,6 +39,14 @@ export function toSlugList(value) {
   return [...new Set(raw.map(slugify).filter(Boolean))];
 }
 
+// Obsidian `cssclasses` (list or string; legacy `cssclass`) → safe class names.
+// Only styling hooks: each is slugified, so nothing but [a-z0-9-] reaches the HTML.
+export function toClassList(value) {
+  if (value === null || value === undefined) return [];
+  const raw = Array.isArray(value) ? value : String(value).split(/[\s,]+/);
+  return [...new Set(raw.map(slugify).filter(Boolean))];
+}
+
 // Sort key. Never mtime (sync re-touches files) and no birthtime (unsupported
 // on Linux by obsidian-headless). Missing → null → sorted last + flagged.
 export function noteDate(fm) {

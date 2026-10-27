@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import matter from 'gray-matter';
 import {
-  SITES, normalizePublish, toSlugList, noteDate, noteTitle, noteSlug, compareNotes,
+  SITES, normalizePublish, toSlugList, noteDate, noteTitle, noteSlug, compareNotes, toClassList,
 } from './contract.js';
 
 export class BuildError extends Error {}
@@ -78,6 +78,7 @@ export function collect(vaultDir, config) {
       date,
       categories: declared.filter((c) => categories.has(c)),
       tags: toSlugList(fm['tr5k-sh-tag']),
+      cssClasses: toClassList(fm.cssclasses ?? fm.cssclass),
       publish,
       body: parsed.content,
     });

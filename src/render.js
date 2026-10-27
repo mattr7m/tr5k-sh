@@ -92,7 +92,8 @@ export function postCard(note, html, sectionsBySlug) {
   for (const t of note.tags) {
     meta.push(primary ? `<a class="tag" href="/${primary}/${t}/">${esc(t)}</a>` : `<span class="tag">${esc(t)}</span>`);
   }
-  return `    <article class="content page-card paper-ruled">
+  const extra = (note.cssClasses || []).map((c) => ` ${c}`).join(''); // Obsidian cssclasses, slugified
+  return `    <article class="content page-card paper-ruled${extra}">
       <h1>${esc(note.title)}</h1>
       <div class="post-meta">
         ${meta.join('\n        ')}
